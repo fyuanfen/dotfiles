@@ -1,0 +1,47 @@
+sudo: false
+language: ruby
+rvm:
+  - 2.2.3
+
+matrix:
+  include:
+    - env: TESTVIM=vim
+    - env: TESTVIM=nvim
+    - env: TESTVIM=nvim VADER_OUTPUT_FILE=/dev/stderr
+
+install:
+  - pip install --user covimerage
+  - |
+    set -e
+    pushd /tmp
+    if [ "$TESTVIM" = vim ]; then
+      git clone --depth=1 https://github.com/vim/vim
+      cd vim
+      ./configure --with-features=huge --enable-rubyinterp --enable-pythoninterp --prefix /tmp/vim
+      make
+      make install
+      PATH=/tmp/vim/bin:$PATH
+    else
+      # Install Neovim nightly (into /tmp/_neovim).
+      TRAVIS_BUILD_DIR=/tmp eval "$(curl -Ss https://raw.githubusercontent.com/neovim/bot-ci/master/scripts/travis-setup.sh) nightly-x64"
+      gem install neovim
+      pip install --user neovim
+    fi
+    popd
+
+script:
+  - export LD_LIBRARY_PATH=~/.rvm/rubies/ruby-2.2.3/lib
+  - $TESTVIM --version
+  # Wrap $TESTVIM with covimerage for coverage reporting.
+  # Uses --no-report, because test/run-tests.sh changes the directory, and that does not pick up .coveragerc then.
+  - VADER_TEST_VIM="covimerage run --source $PWD --data-file $PWD/.coverage_covimerage --no-report $TESTVIM" ./test/run-tests.sh
+  # Test/cover :Vader use case (without bang).
+  - |
+    covimerage run --append --source . --no-report $TESTVIM -Nu test/vimrc \
+      -c 'Vader test/*' \
+      -c 'exe get(get(g:, "vader_result", {}), "successful", 0) ? "qall!" : "cq"'
+
+after_success:
+  - covimerage -vv xml
+  - covimerage report -m
+  - bash <(curl -s https://codecov.io/bash) -X search -X gcov -X coveragepy -f coverage.xml -F $TESTVIM

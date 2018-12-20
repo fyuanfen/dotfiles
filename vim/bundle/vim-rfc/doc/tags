@@ -1,0 +1,8 @@
+rfc	rfc.txt	/*rfc*
+rfc-colors	rfc.txt	/*rfc-colors*
+rfc-contents	rfc.txt	/*rfc-contents*
+rfc-dependencies	rfc.txt	/*rfc-dependencies*
+rfc-internals	rfc.txt	/*rfc-internals*
+rfc-intro	rfc.txt	/*rfc-intro*
+rfc-usage	rfc.txt	/*rfc-usage*
+vim-rfc	rfc.txt	/*vim-rfc*

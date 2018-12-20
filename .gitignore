@@ -1,0 +1,8 @@
+vim/.netrwhist
+vim/.VimballRecord
+vim/files/*/*
+!vim/files/swap
+!vim/files/backup
+vim/bundle/**/.git
+
+mybackup

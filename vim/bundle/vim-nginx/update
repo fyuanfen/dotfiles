@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -ex
+
+if [ -d nginx ]; then
+  hg -R nginx pull
+else
+  hg clone http://hg.nginx.org/nginx
+fi
+
+cp -r nginx/contrib/vim/* .
