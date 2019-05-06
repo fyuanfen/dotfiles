@@ -1,0 +1,21 @@
+
+snippet usn "using namespace" b
+using namespace ${0:std};
+endsnippet
+
+snippet cout "cout" b
+cout << "${0:hello}" << endl;
+endsnippet
+
+snippet forvi "for vector iterator" b
+for (auto it = ${1:vector}.cbegin(); it != $1.cend(); ++it) {
+  ${2}
+}
+endsnippet
+
+snippet jsonobj "for rapid json iterator" b
+mJSONWriter->StartObject();
+	mJSONWriter->Key(${1:"key"});
+	mJSONWriter->String(${2:"String"});
+mJSONWriter->EndObject();
+endsnippet

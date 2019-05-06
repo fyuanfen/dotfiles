@@ -22,28 +22,38 @@ from __future__ import absolute_import
 # Not installing aliases from python-future; it's unreliable and slow.
 from builtins import *  # noqa
 
+from future.utils import iteritems
 from ycm import vimsupport
+from ycmd import user_options_store
 from ycmd import identifier_utils
 
 YCM_VAR_PREFIX = 'ycm_'
 
 
-def GetUserOptions():
+def BuildServerConf():
   """Builds a dictionary mapping YCM Vim user options to values. Option names
   don't have the 'ycm_' prefix."""
   # We only evaluate the keys of the vim globals and not the whole dictionary
   # to avoid unicode issues.
   # See https://github.com/Valloric/YouCompleteMe/pull/2151 for details.
   keys = vimsupport.GetVimGlobalsKeys()
-  user_options = {}
+  server_conf = {}
   for key in keys:
     if not key.startswith( YCM_VAR_PREFIX ):
       continue
     new_key = key[ len( YCM_VAR_PREFIX ): ]
     new_value = vimsupport.VimExpressionToPythonType( 'g:' + key )
-    user_options[ new_key ] = new_value
+    server_conf[ new_key ] = new_value
 
-  return user_options
+  return server_conf
+
+
+def LoadJsonDefaultsIntoVim():
+  defaults = user_options_store.DefaultOptions()
+  for key, value in iteritems( defaults ):
+    new_key = 'g:ycm_' + key
+    if not vimsupport.VariableExists( new_key ):
+      vimsupport.SetVariableValue( new_key, value )
 
 
 def CurrentIdentifierFinished():
@@ -101,16 +111,22 @@ def AdjustCandidateInsertionText( candidates ):
 
   new_candidates = []
   for candidate in candidates:
-    new_candidate = candidate.copy()
+    if isinstance( candidate, dict ):
+      new_candidate = candidate.copy()
 
-    if not new_candidate.get( 'abbr' ):
-      new_candidate[ 'abbr' ] = new_candidate[ 'word' ]
+      if 'abbr' not in new_candidate:
+        new_candidate[ 'abbr' ] = new_candidate[ 'word' ]
 
-    new_candidate[ 'word' ] = NewCandidateInsertionText(
-      new_candidate[ 'word' ],
-      text_after_cursor )
+      new_candidate[ 'word' ] = NewCandidateInsertionText(
+        new_candidate[ 'word' ],
+        text_after_cursor )
 
-    new_candidates.append( new_candidate )
+      new_candidates.append( new_candidate )
+
+    elif isinstance( candidate, str ) or isinstance( candidate, bytes ):
+      new_candidates.append(
+        { 'abbr': candidate,
+          'word': NewCandidateInsertionText( candidate, text_after_cursor ) } )
   return new_candidates
 
 

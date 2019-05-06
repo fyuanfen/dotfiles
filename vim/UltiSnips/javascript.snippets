@@ -1,0 +1,284 @@
+
+snippet ex "module export" b
+module.exports = $1;
+endsnippet
+
+snippet re "require" b
+const $1 = require('$1');
+endsnippet
+
+snippet pe "process.ext" b
+process.exit(${0:0});
+endsnippet
+
+# Snippets for Console Debug Output
+
+snippet ce "console.error" b
+console.error($0);
+endsnippet
+
+snippet cl "console.log" b 
+console.log($0);
+endsnippet
+
+snippet lt "logger.trace" b 
+logger.trace($0);
+endsnippet
+
+snippet ld "logger.debug" b 
+logger.debug($0);
+endsnippet
+
+snippet ll "logger.info" b 
+logger.info($0);
+endsnippet
+
+snippet lw "logger.warn" b 
+logger.warn($0);
+endsnippet
+
+snippet le "logger.error" b 
+logger.error($0);
+endsnippet
+
+snippet r2b "result to body" w 
+result => {
+  ctx.body = result;
+}
+endsnippet
+
+snippet for "for (...) {...} (counting up)" b
+for (let ${1:i} = 0; $1 < $2; ++$1) {
+	${VISUAL}$0
+}
+endsnippet
+
+snippet express "express base" b
+const express = require('express');
+const app = express();
+const iPort = process.argv[2];
+
+app.get('/', function (req, res) {
+    res.send('Hello World!');
+});
+
+app.listen(iPort, function () {
+  console.log('Example app listening on port %d!',iPort);
+});
+endsnippet
+
+
+## asset store proj snippets
+snippet routerinit "koa router init" b
+const router = require('koa-router')();
+const accessCheckBlz = require("blz/login/access_check");
+const bodyParser = require('blz/middleware/body_parser');
+
+/**
+ * @api {get} /router_name router_name 
+ * @apiName GetUserInfo
+ * @apiGroup User
+ * @apiPermission 已登录用户
+ * @apiParamExample {json} 请求示例
+ *
+ * @apiSuccess (Result说明) {Number} id 用户ID 
+ *                                                                                                                                                                                                                                       
+ * @apiSuccessExample {json} 成功返回示例
+ * { code: 0, result: 1 }
+ */
+router.get('/', accessCheckBlz.middleware, bodyParser, ctx => {
+  ctx.body = 'hello';
+});
+
+router.name = '${1:router_name}';
+module.exports = router;
+endsnippet
+
+## VUE notify
+snippet notify "vue notify" b 
+this.$root.notify.warn(${1:msg},${2:title},true,3);
+endsnippet
+
+snippet usererror "user custom error" b
+throw customError.userErrorMsg("${1:message}")
+endsnippet
+
+snippet sett "settimeout test" b
+setTimeout(function(){
+    ${0}
+},2000);
+endsnippet
+
+snippet fori "for(in )" b
+for (let ${1:i} in ${2:obj}) {
+	${0}
+}
+endsnippet
+
+snippet foro "for(in )" b
+for (let ${1:i} of ${2:obj}) {
+	${0}
+}
+endsnippet
+
+snippet keys "object.keys" w
+Object.keys(${0})
+endsnippet
+
+snippet fore "forEach" w
+forEach((${1:one}) => {
+	${0}
+});
+endsnippet
+
+# if
+snippet if
+if (${1:cond}) {
+	${0}
+} else {
+
+}
+endsnippet
+
+# save this
+snippet savethis
+let _this = this;
+endsnippet
+
+snippet ifne "if not err" b
+if (!err && ${1:rows}.length > 0) {
+	${0}
+}
+endsnippet
+
+snippet ifus "if update succ affected rows > 1" b
+if (info && info[0] > 0) {
+	${0}
+}
+endsnippet
+
+# if ... else
+snippet ife
+if (${1:err}) {
+	${2}
+} else {
+	${0}
+}
+endsnippet
+
+snippet ifmain "if require.main == module" b
+if (require.main === module) {
+	${0}
+}
+
+endsnippet
+
+# Anonymous Function
+snippet f "anonymous Function" w
+(${1}) => {
+	${0}
+}
+endsnippet
+
+snippet fun "function (fun)"
+function (${1:argument}) {
+	${VISUAL}$0
+}
+endsnippet
+
+snippet cf "Function assigned to const" b
+const ${1:function_name} = (${2}) => {
+	${0}
+};
+endsnippet
+
+
+#time
+snippet ymd "time format" w
+'YYYY-MM-DD HH:mm:ss'
+endsnippet
+
+snippet momentnow "moment now" w
+moment().format('YYYY-MM-DD HH:mm:ss')
+endsnippet
+
+# JSON.parse
+snippet jsonp
+JSON.parse(${0:jstr});
+endsnippet
+# JSON.stringify
+snippet jsons
+JSON.stringify(${0:object});
+endsnippet
+
+#switch
+snippet swit "switch" b
+switch (${1}) {
+    case ${0}: 
+		break;
+    case : 
+		break;
+	default:
+}
+endsnippet
+
+snippet try "try catch" b
+try {
+    ${1}
+} catch (error) {
+    console.error(error);
+}
+endsnippet
+
+snippet uf "util format" 
+util.format(${0});
+endsnippet
+
+snippet spjo "split and join" w
+split('|').join(',');
+endsnippet
+
+# async
+snippet asyncw "async.waterfall" b
+async.waterfall(
+	[function(cb1){
+		cb1(null,param);
+	},function(param,cb2){
+		cb2(null,param);
+	}],
+	function (err) {
+    }
+);
+endsnippet
+
+snippet timec "calu time used" b
+var _tStart = new Date();
+
+console.error('used %d ms',new Date() - _tStart);
+endsnippet
+
+snippet asyncwhile "async.whilst" b
+var idx = 0;
+async.whilst(
+    function () {return idx < ${0:Total};},
+	function (callback) {
+	    idx++;
+		callback();
+	},
+	function (err,result) {
+    }
+);
+endsnippet
+
+snippet while "while" b
+while (${1:condition}) {
+  ${2:expression}
+};
+endsnippet
+
+
+#css strip
+snippet rem "css rem" w
+rem(${0})
+endsnippet
+

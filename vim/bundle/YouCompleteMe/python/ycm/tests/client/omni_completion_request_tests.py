@@ -34,8 +34,6 @@ def BuildOmnicompletionRequest( results, start_column = 1 ):
   omni_completer.ComputeCandidates = MagicMock( return_value = results )
 
   request_data = {
-    'line_num': 1,
-    'column_num': 1,
     'start_column': start_column
   }
   request = OmniCompletionRequest( omni_completer, request_data )
@@ -55,10 +53,8 @@ def Response_FromOmniCompleter_test():
   request = BuildOmnicompletionRequest( results )
 
   eq_( request.Response(), {
-    'line': 1,
-    'column': 1,
-    'completion_start_column': 1,
-    'completions': results
+    'completions': results,
+    'completion_start_column': 1
   } )
 
 
@@ -68,8 +64,8 @@ def RawResponse_ConvertedFromOmniCompleter_test():
       "kind": "KIND", "info": "INFO" },
     { "word": "WORD2", "abbr": "ABBR2", "menu": "MENU2",
       "kind": "KIND2", "info": "INFO" },
-    { "word": "WORD", "abbr": "ABBR", },
-    {},
+    { "word": "WORD", "abbr": "ABBR",  },
+    {  },
   ]
   expected_results = [
     has_entries( { "insertion_text": "WORD", "menu_text": "ABBR",
@@ -78,8 +74,8 @@ def RawResponse_ConvertedFromOmniCompleter_test():
     has_entries( { "insertion_text": "WORD2", "menu_text": "ABBR2",
                    "extra_menu_info": "MENU2", "kind": [ "KIND2" ],
                    "detailed_info": "INFO" } ),
-    has_entries( { "insertion_text": "WORD", "menu_text": "ABBR", } ),
-    has_entries( {} ),
+    has_entries( { "insertion_text": "WORD", "menu_text": "ABBR",  } ),
+    has_entries( {  } ),
   ]
   request = BuildOmnicompletionRequest( vim_results )
 

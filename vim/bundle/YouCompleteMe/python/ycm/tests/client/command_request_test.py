@@ -100,7 +100,7 @@ class GoToResponse_QuickFix_test( object ):
                       variable_exists ):
     self._request._response = completer_response
 
-    self._request.RunPostCommandActionsIfNeeded( 'aboveleft' )
+    self._request.RunPostCommandActionsIfNeeded()
 
     vim_eval.assert_has_exact_calls( [
       call( 'setqflist( {0} )'.format( json.dumps( expected_qf_list ) ) )
@@ -120,7 +120,7 @@ class Response_Detection_test( object ):
       with patch( 'vim.command' ) as vim_command:
         request = CommandRequest( [ command ] )
         request._response = response
-        request.RunPostCommandActionsIfNeeded( 'belowright' )
+        request.RunPostCommandActionsIfNeeded()
         vim_command.assert_called_with( "echo '{0}'".format( response ) )
 
     tests = [
@@ -144,7 +144,7 @@ class Response_Detection_test( object ):
           request._response = {
             'fixits': []
           }
-          request.RunPostCommandActionsIfNeeded( 'botright' )
+          request.RunPostCommandActionsIfNeeded()
 
           post_vim_message.assert_called_with(
             'No fixits found for current line', warning = False )
@@ -156,16 +156,16 @@ class Response_Detection_test( object ):
 
   def FixIt_Response_test( self ):
     # Ensures we recognise and handle fixit responses with some dummy chunk data
-    def FixItTest( command, response, chunks, selection, silent ):
+    def FixItTest( command, response, chunks, selection ):
       with patch( 'ycm.vimsupport.ReplaceChunks' ) as replace_chunks:
         with patch( 'ycm.vimsupport.PostVimMessage' ) as post_vim_message:
           with patch( 'ycm.vimsupport.SelectFromList',
                       return_value = selection ):
             request = CommandRequest( [ command ] )
             request._response = response
-            request.RunPostCommandActionsIfNeeded( 'leftabove' )
+            request.RunPostCommandActionsIfNeeded()
 
-            replace_chunks.assert_called_with( chunks, silent = silent )
+            replace_chunks.assert_called_with( chunks )
             post_vim_message.assert_not_called()
 
     basic_fixit = {
@@ -187,31 +187,23 @@ class Response_Detection_test( object ):
         'text': 'second',
         'chunks': [ {
           'dummy chunk contents': False
-        } ]
+        }]
       } ]
     }
     multi_fixit_first_chunks = multi_fixit[ 'fixits' ][ 0 ][ 'chunks' ]
     multi_fixit_second_chunks = multi_fixit[ 'fixits' ][ 1 ][ 'chunks' ]
 
     tests = [
-      [ 'AnythingYouLike',
-        basic_fixit,  basic_fixit_chunks,        0, False ],
-      [ 'GoToEvenWorks',
-        basic_fixit,  basic_fixit_chunks,        0, False ],
-      [ 'FixItWorks',
-        basic_fixit,  basic_fixit_chunks,        0, False ],
-      [ 'and8434fd andy garbag!',
-        basic_fixit,  basic_fixit_chunks,        0, False ],
-      [ 'Format',
-        basic_fixit,  basic_fixit_chunks,        0, True ],
-      [ 'select from multiple 1',
-        multi_fixit,  multi_fixit_first_chunks,  0, False ],
-      [ 'select from multiple 2',
-        multi_fixit,  multi_fixit_second_chunks, 1, False ],
+      [ 'AnythingYouLike',        basic_fixit, basic_fixit_chunks, 0 ],
+      [ 'GoToEvenWorks',          basic_fixit, basic_fixit_chunks, 0 ],
+      [ 'FixItWorks',             basic_fixit, basic_fixit_chunks, 0 ],
+      [ 'and8434fd andy garbag!', basic_fixit, basic_fixit_chunks, 0 ],
+      [ 'select from multiple 1',   multi_fixit, multi_fixit_first_chunks, 0 ],
+      [ 'select from multiple 2',   multi_fixit, multi_fixit_second_chunks, 1 ],
     ]
 
     for test in tests:
-      yield FixItTest, test[ 0 ], test[ 1 ], test[ 2 ], test[ 3 ], test[ 4 ]
+      yield FixItTest, test[ 0 ], test[ 1 ], test[ 2 ], test[ 3 ]
 
 
   def Message_Response_test( self ):
@@ -222,7 +214,7 @@ class Response_Detection_test( object ):
       with patch( 'ycm.vimsupport.PostVimMessage' ) as post_vim_message:
         request = CommandRequest( [ command ] )
         request._response = { 'message': message }
-        request.RunPostCommandActionsIfNeeded( 'rightbelow' )
+        request.RunPostCommandActionsIfNeeded()
         post_vim_message.assert_called_with( message, warning = False )
 
     tests = [
@@ -243,7 +235,7 @@ class Response_Detection_test( object ):
       with patch( 'ycm.vimsupport.WriteToPreviewWindow' ) as write_to_preview:
         request = CommandRequest( [ command ] )
         request._response = { 'detailed_info': info }
-        request.RunPostCommandActionsIfNeeded( 'topleft' )
+        request.RunPostCommandActionsIfNeeded()
         write_to_preview.assert_called_with( info )
 
     tests = [
@@ -263,13 +255,11 @@ class Response_Detection_test( object ):
       with patch( 'ycm.vimsupport.JumpToLocation' ) as jump_to_location:
         request = CommandRequest( [ command ] )
         request._response = response
-        request.RunPostCommandActionsIfNeeded( 'rightbelow' )
+        request.RunPostCommandActionsIfNeeded()
         jump_to_location.assert_called_with(
             response[ 'filepath' ],
             response[ 'line_num' ],
-            response[ 'column_num' ],
-            'rightbelow',
-            'same-buffer' )
+            response[ 'column_num' ] )
 
     def GoToListTest( command, response ):
       # Note: the detail of these called are tested by
@@ -279,7 +269,7 @@ class Response_Detection_test( object ):
         with patch( 'ycm.vimsupport.OpenQuickFixList' ) as open_qf_list:
           request = CommandRequest( [ command ] )
           request._response = response
-          request.RunPostCommandActionsIfNeeded( 'tab' )
+          request.RunPostCommandActionsIfNeeded()
           ok_( set_qf_list.called )
           ok_( open_qf_list.called )
 
@@ -295,7 +285,7 @@ class Response_Detection_test( object ):
       [ GoToTest,     'FindAThing',      basic_goto ],
       [ GoToTest,     'FixItGoto',       basic_goto ],
       [ GoToListTest, 'AnythingYouLike', [ basic_goto ] ],
-      [ GoToListTest, 'GoTo',            [] ],
+      [ GoToListTest, 'GoTo',            []  ],
       [ GoToListTest, 'FixItGoto',       [ basic_goto, basic_goto ] ],
     ]
 

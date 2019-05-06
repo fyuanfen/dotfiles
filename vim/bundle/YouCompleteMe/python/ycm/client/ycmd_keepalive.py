@@ -24,7 +24,7 @@ from builtins import *  # noqa
 
 import time
 from threading import Thread
-from ycm.client.base_request import BaseRequest
+from ycm.client.base_request import BaseRequest, HandleServerException
 
 
 # This class can be used to keep the ycmd server alive for the duration of the
@@ -45,4 +45,5 @@ class YcmdKeepalive( object ):
     while True:
       time.sleep( self._ping_interval_seconds )
 
-      BaseRequest().GetDataFromHandler( 'healthy', display_message = False )
+      with HandleServerException( display = False ):
+        BaseRequest.GetDataFromHandler( 'healthy' )

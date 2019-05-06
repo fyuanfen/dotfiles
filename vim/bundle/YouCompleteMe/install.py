@@ -11,11 +11,11 @@ import sys
 import os.path as p
 import glob
 
-PY_MAJOR, PY_MINOR, PY_PATCH = sys.version_info[ 0 : 3 ]
-if not ( ( PY_MAJOR == 2 and PY_MINOR == 7 and PY_PATCH >= 1 ) or
-         ( PY_MAJOR == 3 and PY_MINOR >= 4 ) or
+PY_MAJOR, PY_MINOR = sys.version_info[ 0 : 2 ]
+if not ( ( PY_MAJOR == 2 and PY_MINOR >= 6 ) or
+         ( PY_MAJOR == 3 and PY_MINOR >= 3 ) or
          PY_MAJOR > 3 ):
-  sys.exit( 'YouCompleteMe requires Python >= 2.7.1 or >= 3.4; '
+  sys.exit( 'YouCompleteMe requires Python >= 2.6 or >= 3.3; '
             'your version of Python is ' + sys.version )
 
 DIR_OF_THIS_SCRIPT = p.dirname( p.abspath( __file__ ) )
@@ -43,10 +43,9 @@ def Main():
   old_libs = (
     glob.glob( p.join( DIR_OF_OLD_LIBS, '*ycm_core.*' ) ) +
     glob.glob( p.join( DIR_OF_OLD_LIBS, '*ycm_client_support.*' ) ) +
-    glob.glob( p.join( DIR_OF_OLD_LIBS, '*clang*.*' ) ) )
+    glob.glob( p.join( DIR_OF_OLD_LIBS, '*clang*.*') ) )
   for lib in old_libs:
     os.remove( lib )
-
 
 if __name__ == "__main__":
   Main()

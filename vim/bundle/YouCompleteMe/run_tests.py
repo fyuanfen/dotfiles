@@ -1,47 +1,48 @@
 #!/usr/bin/env python
 
-import argparse
-import glob
 import os
-import os.path as p
 import subprocess
+import os.path as p
 import sys
 
 DIR_OF_THIS_SCRIPT = p.dirname( p.abspath( __file__ ) )
 DIR_OF_THIRD_PARTY = p.join( DIR_OF_THIS_SCRIPT, 'third_party' )
+DIR_OF_YCMD_THIRD_PARTY = p.join( DIR_OF_THIRD_PARTY, 'ycmd', 'third_party' )
 
-# We don't include python-future (not to be confused with pythonfutures) because
-# it needs to be inserted in sys.path AFTER the standard library imports but we
-# can't do that with PYTHONPATH because the std lib paths are always appended to
-# PYTHONPATH. We do it correctly inside Vim because we have access to the right
-# sys.path. So for dev, we rely on python-future being installed correctly with
-#
-#   pip install -r python/test_requirements.txt
-#
-# Pip knows how to install this correctly so that it doesn't matter where in
-# sys.path the path is.
-python_path = [ p.join( DIR_OF_THIRD_PARTY, 'pythonfutures' ),
-                p.join( DIR_OF_THIRD_PARTY, 'requests-futures' ),
-                p.join( DIR_OF_THIRD_PARTY, 'requests_deps', 'chardet' ),
-                p.join( DIR_OF_THIRD_PARTY, 'requests_deps', 'certifi' ),
-                p.join( DIR_OF_THIRD_PARTY, 'requests_deps', 'idna' ),
-                p.join( DIR_OF_THIRD_PARTY, 'requests_deps', 'requests' ),
-                p.join( DIR_OF_THIRD_PARTY, 'requests_deps', 'urllib3', 'src' ),
-                p.join( DIR_OF_THIRD_PARTY, 'ycmd' ) ]
+python_path = []
+for folder in os.listdir( DIR_OF_THIRD_PARTY ):
+  python_path.append( p.abspath( p.join( DIR_OF_THIRD_PARTY, folder ) ) )
+for folder in os.listdir( DIR_OF_YCMD_THIRD_PARTY ):
+  # We skip python-future because it needs to be inserted in sys.path AFTER
+  # the standard library imports but we can't do that with PYTHONPATH because
+  # the std lib paths are always appended to PYTHONPATH. We do it correctly in
+  # prod in ycmd/utils.py because we have access to the right sys.path.
+  # So for dev, we rely on python-future being installed correctly with
+  #   pip install -r test_requirements.txt
+  #
+  # Pip knows how to install this correctly so that it doesn't matter where in
+  # sys.path the path is.
+  if folder == 'python-future':
+    continue
+  python_path.append( p.abspath( p.join( DIR_OF_YCMD_THIRD_PARTY, folder ) ) )
 if os.environ.get( 'PYTHONPATH' ):
   python_path.append( os.environ[ 'PYTHONPATH' ] )
 os.environ[ 'PYTHONPATH' ] = os.pathsep.join( python_path )
 
+sys.path.insert( 1, p.abspath( p.join( DIR_OF_YCMD_THIRD_PARTY,
+                                       'argparse' ) ) )
+
+import argparse
+
 
 def RunFlake8():
   print( 'Running flake8' )
-  args = [ sys.executable,
-           '-m',
-           'flake8',
-           p.join( DIR_OF_THIS_SCRIPT, 'python' ) ]
-  root_dir_scripts = glob.glob( p.join( DIR_OF_THIS_SCRIPT, '*.py' ) )
-  args.extend( root_dir_scripts )
-  subprocess.check_call( args )
+  subprocess.check_call( [
+    sys.executable,
+    # __main__ is required on Python 2.6.
+    '-m', 'flake8.__main__',
+    p.join( DIR_OF_THIS_SCRIPT, 'python' )
+  ] )
 
 
 def ParseArguments():
@@ -85,7 +86,9 @@ def NoseTests( parsed_args, extra_nosetests_args ):
   else:
     nosetests_args.append( p.join( DIR_OF_THIS_SCRIPT, 'python' ) )
 
-  subprocess.check_call( [ sys.executable, '-m', 'nose' ] + nosetests_args )
+  subprocess.check_call( [ sys.executable,
+                           # __main__ is required on Python 2.6.
+                           '-m', 'nose.__main__' ] + nosetests_args )
 
 
 def Main():
@@ -94,7 +97,6 @@ def Main():
     RunFlake8()
   BuildYcmdLibs( parsed_args )
   NoseTests( parsed_args, nosetests_args )
-
 
 if __name__ == "__main__":
   Main()

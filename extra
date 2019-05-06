@@ -1,0 +1,41 @@
+#!/bin/bash
+
+USER='yuriel'
+SOURCE="10.24.198.44::backup" #服务器ip::模块名称
+PASSWD="xi8315XIE"
+CMD="/usr/bin/rsync"
+function sync() {
+  if [ $# -lt 1  ]; then
+      echo "Usage: sync filename [up|down]"
+      exit 1
+  fi
+
+  echo $PASSED > /tmp/pass.file
+  chmod 600 /tmp/pass.file
+  file_name=$1
+  act=$2
+  echo $act
+  if [[ $act == up ]]; then
+      #statements
+      echo "try up $file_name to rsynctmp"
+      $CMD -avz --port=873 ./$file_name $USER@$SOURCE/ --password-file=/tmp/pass.file
+  else
+      echo "try down $file_name to ./"
+      $CND -avz --port=873 $USER@$SOURCE/$file_name --password-file=/tmp/pass.file ./
+  fi
+  if [ $? -eq 0  ]; then
+      echo "done"
+  else
+      echo "down file failed. check param"
+  fi
+  rm /tmp/pass.file
+}
+
+
+export PATH="/usr/local/bin:/usr/local/sbin:/sbin:/bin:/usr/sbin:/usr/bin:~/bin:/usr/libexec/git-core"
+export LD_LIBRARY_PATH="/usr/local/lib"
+
+alias nginxconf="cd /usr/local/nginx/conf/conf.d"
+alias nginxreload="/usr/local/nginx/sbin/nginx -s reload"
+alias hg="history | grep"
+

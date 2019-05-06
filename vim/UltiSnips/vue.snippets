@@ -1,0 +1,39 @@
+
+snippet comp
+<template lang="pug">
+  .div                                                                                                                                                                                                                                   {{num}}
+</template>
+
+<style lang="scss">
+
+</style>
+
+<script>
+export default {
+  name: 'comp-name',
+  data (){ 
+    return {
+      num : 1,
+    }   
+  },  
+  props : { 
+    val : { 
+      type : Number,
+      default : 0,
+    }   
+  },  
+  components : { 
+    mfImage
+  },  
+  methods : { 
+    fun () {
+      return true;
+    }   
+  },  
+  mounted () {
+
+  }
+};
+</script>
+endsnippet
+

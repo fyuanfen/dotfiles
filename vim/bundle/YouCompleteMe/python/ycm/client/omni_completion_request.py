@@ -41,19 +41,15 @@ class OmniCompletionRequest( CompletionRequest ):
 
   def RawResponse( self ):
     return {
-      'line': self.request_data[ 'line_num' ],
-      'column': self.request_data[ 'column_num' ],
-      'completion_start_column': self.request_data[ 'start_column' ],
-      'completions': _ConvertVimDatasToCompletionDatas( self._results )
+      'completions': _ConvertVimDatasToCompletionDatas( self._results ),
+      'completion_start_column': self.request_data[ 'start_column' ]
     }
 
 
   def Response( self ):
     return {
-      'line': self.request_data[ 'line_num' ],
-      'column': self.request_data[ 'column_num' ],
-      'completion_start_column': self.request_data[ 'start_column' ],
-      'completions': self._results
+      'completions': self._results,
+      'completion_start_column': self.request_data[ 'start_column' ]
     }
 
 

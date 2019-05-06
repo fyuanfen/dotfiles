@@ -26,7 +26,7 @@ import vim
 from ycm import vimsupport
 from ycmd import utils
 from ycmd.completers.completer import Completer
-from ycm.client.base_request import BaseRequest
+from ycm.client.base_request import BaseRequest, HandleServerException
 
 OMNIFUNC_RETURNED_BAD_VALUE = 'Omnifunc returned bad value to YCM!'
 OMNIFUNC_NOT_LIST = ( 'Omnifunc did not return a list or a dict with a "words" '
@@ -57,12 +57,8 @@ class OmniCompleter( Completer ):
 
 
   def ShouldUseNowInner( self, request_data ):
-    if request_data[ 'force_semantic' ]:
+    if request_data.get( 'force_semantic', False ):
       return True
-    disabled_filetypes = self.user_options[
-      'filetype_specific_completion_to_disable' ]
-    if not vimsupport.CurrentFiletypesEnabled( disabled_filetypes ):
-      return False
     return super( OmniCompleter, self ).ShouldUseNowInner( request_data )
 
 
@@ -78,38 +74,26 @@ class OmniCompleter( Completer ):
     if not self._omnifunc:
       return []
 
-    # Calling directly the omnifunc may move the cursor position. This is the
-    # case with the default Vim omnifunc for C-family languages
-    # (ccomplete#Complete) which calls searchdecl to find a declaration. This
-    # function is supposed to move the cursor to the found declaration but it
-    # doesn't when called through the omni completion mapping (CTRL-X CTRL-O).
-    # So, we restore the cursor position after the omnifunc calls.
-    line, column = vimsupport.CurrentLineAndColumn()
-
     try:
-      start_column = vimsupport.GetIntValue( self._omnifunc + '(1,"")' )
-
-      # Vim only stops completion if the value returned by the omnifunc is -3 or
-      # -2. In other cases, if the value is negative or greater than the current
-      # column, the start column is set to the current column; otherwise, the
-      # value is used as the start column.
-      if start_column in ( -3, -2 ):
+      return_value = vimsupport.GetIntValue( self._omnifunc + '(1,"")' )
+      if return_value < 0:
+        # FIXME: Technically, if the return is -1 we should raise an error
         return []
-      if start_column < 0 or start_column > column:
-        start_column = column
 
       # Use the start column calculated by the omnifunc, rather than our own
       # interpretation. This is important for certain languages where our
       # identifier detection is either incorrect or not compatible with the
       # behaviour of the omnifunc. Note: do this before calling the omnifunc
-      # because it affects the value returned by 'query'.
-      request_data[ 'start_column' ] = start_column + 1
+      # because it affects the value returned by 'query'
+      request_data[ 'start_column' ] = return_value + 1
 
-      # Vim internally moves the cursor to the start column before calling again
-      # the omnifunc. Some omnifuncs like the one defined by the
-      # LanguageClient-neovim plugin depend on this behavior to compute the list
-      # of candidates.
-      vimsupport.SetCurrentLineAndColumn( line, start_column )
+      # Calling directly the omnifunc may move the cursor position. This is the
+      # case with the default Vim omnifunc for C-family languages
+      # (ccomplete#Complete) which calls searchdecl to find a declaration. This
+      # function is supposed to move the cursor to the found declaration but it
+      # doesn't when called through the omni completion mapping (CTRL-X CTRL-O).
+      # So, we restore the cursor position after calling the omnifunc.
+      line, column = vimsupport.CurrentLineAndColumn()
 
       omnifunc_call = [ self._omnifunc,
                         "(0,'",
@@ -117,28 +101,20 @@ class OmniCompleter( Completer ):
                         "')" ]
       items = vim.eval( ''.join( omnifunc_call ) )
 
+      vimsupport.SetCurrentLineAndColumn( line, column )
+
       if isinstance( items, dict ) and 'words' in items:
         items = items[ 'words' ]
 
       if not hasattr( items, '__iter__' ):
         raise TypeError( OMNIFUNC_NOT_LIST )
 
-      # Vim allows each item of the list to be either a string or a dictionary
-      # but ycmd only supports lists where items are all strings or all
-      # dictionaries. Convert all strings into dictionaries.
-      for index, item in enumerate( items ):
-        if not isinstance( item, dict ):
-          items[ index ] = { 'word': item }
-
-      return items
+      return list( filter( bool, items ) )
 
     except ( TypeError, ValueError, vim.error ) as error:
       vimsupport.PostVimMessage(
         OMNIFUNC_RETURNED_BAD_VALUE + ' ' + str( error ) )
       return []
-
-    finally:
-      vimsupport.SetCurrentLineAndColumn( line, column )
 
 
   def FilterAndSortCandidatesInner( self, candidates, sort_property, query ):
@@ -148,6 +124,7 @@ class OmniCompleter( Completer ):
       'query': query
     }
 
-    response = BaseRequest().PostDataToHandler( request_data,
-                                                'filter_and_sort_candidates' )
-    return response if response is not None else []
+    with HandleServerException():
+      return BaseRequest.PostDataToHandler( request_data,
+                                            'filter_and_sort_candidates' )
+    return candidates

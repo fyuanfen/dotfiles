@@ -1,4 +1,4 @@
-# Copyright (C) 2013-2018 YouCompleteMe contributors
+# Copyright (C) 2013  Google Inc.
 #
 # This file is part of YouCompleteMe.
 #
@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from builtins import *  # noqa
 
 from future.utils import itervalues, iteritems
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from ycm import vimsupport
 from ycm.diagnostic_filter import DiagnosticFilter, CompileLevel
 
@@ -36,6 +36,8 @@ class DiagnosticInterface( object ):
     self._diag_filter = DiagnosticFilter.CreateFromOptions( user_options )
     # Line and column numbers are 1-based
     self._line_to_diags = defaultdict( list )
+    self._placed_signs = []
+    self._next_sign_id = 1
     self._previous_diag_line_number = -1
     self._diag_message_needs_clearing = False
 
@@ -59,7 +61,7 @@ class DiagnosticInterface( object ):
   def PopulateLocationList( self ):
     # Do nothing if loc list is already populated by diag_interface
     if not self._user_options[ 'always_populate_location_list' ]:
-      self._UpdateLocationLists()
+      self._UpdateLocationList()
     return bool( self._diagnostics )
 
 
@@ -74,10 +76,11 @@ class DiagnosticInterface( object ):
     if self._user_options[ 'enable_diagnostic_signs' ]:
       self._UpdateSigns()
 
-    self.UpdateMatches()
+    if self._user_options[ 'enable_diagnostic_highlighting' ]:
+      self._UpdateSquiggles()
 
     if self._user_options[ 'always_populate_location_list' ]:
-      self._UpdateLocationLists()
+      self._UpdateLocationList()
 
 
   def _ApplyDiagnosticFilter( self, diags ):
@@ -119,61 +122,82 @@ class DiagnosticInterface( object ):
     return count
 
 
-  def _UpdateLocationLists( self ):
-    vimsupport.SetLocationListsForBuffer(
-      self._bufnr,
+  def _UpdateLocationList( self ):
+    vimsupport.SetLocationList(
       vimsupport.ConvertDiagnosticsToQfList( self._diagnostics ) )
 
 
-  def UpdateMatches( self ):
-    if not self._user_options[ 'enable_diagnostic_highlighting' ]:
-      return
+  def _UpdateSquiggles( self ):
 
-    # Vim doesn't provide a way to update the matches for a different window
-    # than the current one (which is a view of the current buffer).
-    if vimsupport.GetCurrentBufferNumber() != self._bufnr:
-      return
-
-    matches_to_remove = vimsupport.GetDiagnosticMatchesInCurrentWindow()
+    vimsupport.ClearYcmSyntaxMatches()
 
     for diags in itervalues( self._line_to_diags ):
       # Insert squiggles in reverse order so that errors overlap warnings.
       for diag in reversed( diags ):
-        group = ( 'YcmErrorSection' if _DiagnosticIsError( diag ) else
-                  'YcmWarningSection' )
+        location_extent = diag[ 'location_extent' ]
+        is_error = _DiagnosticIsError( diag )
 
-        for pattern in _ConvertDiagnosticToMatchPatterns( diag ):
-          # The id doesn't matter for matches that we may add.
-          match = vimsupport.DiagnosticMatch( 0, group, pattern )
-          try:
-            matches_to_remove.remove( match )
-          except ValueError:
-            vimsupport.AddDiagnosticMatch( match )
+        if location_extent[ 'start' ][ 'line_num' ] <= 0:
+          location = diag[ 'location' ]
+          vimsupport.AddDiagnosticSyntaxMatch(
+              location[ 'line_num' ],
+              location[ 'column_num' ],
+              is_error = is_error )
+        else:
+          vimsupport.AddDiagnosticSyntaxMatch(
+            location_extent[ 'start' ][ 'line_num' ],
+            location_extent[ 'start' ][ 'column_num' ],
+            location_extent[ 'end' ][ 'line_num' ],
+            location_extent[ 'end' ][ 'column_num' ],
+            is_error = is_error )
 
-    for match in matches_to_remove:
-      vimsupport.RemoveDiagnosticMatch( match )
+        for diag_range in diag[ 'ranges' ]:
+          vimsupport.AddDiagnosticSyntaxMatch(
+            diag_range[ 'start' ][ 'line_num' ],
+            diag_range[ 'start' ][ 'column_num' ],
+            diag_range[ 'end' ][ 'line_num' ],
+            diag_range[ 'end' ][ 'column_num' ],
+            is_error = is_error )
 
 
   def _UpdateSigns( self ):
-    signs_to_unplace = vimsupport.GetSignsInBuffer( self._bufnr )
+    new_signs, obsolete_signs = self._GetNewAndObsoleteSigns()
 
+    self._PlaceNewSigns( new_signs )
+
+    self._UnplaceObsoleteSigns( obsolete_signs )
+
+
+  def _GetNewAndObsoleteSigns( self ):
+    new_signs = []
+    obsolete_signs = list( self._placed_signs )
     for line, diags in iteritems( self._line_to_diags ):
       if not diags:
         continue
 
-      # We always go for the first diagnostic on the line because diagnostics
-      # are sorted by errors in priority and Vim can only display one sign by
-      # line.
-      name = 'YcmError' if _DiagnosticIsError( diags[ 0 ] ) else 'YcmWarning'
-      sign = vimsupport.CreateSign( line, name, self._bufnr )
-
+      # We always go for the first diagnostic on line,
+      # because it is sorted giving priority to the Errors.
+      diag = diags[ 0 ]
+      sign = _DiagSignPlacement( self._next_sign_id,
+                                 line, _DiagnosticIsError( diag ) )
       try:
-        signs_to_unplace.remove( sign )
+        obsolete_signs.remove( sign )
       except ValueError:
-        vimsupport.PlaceSign( sign )
+        new_signs.append( sign )
+        self._next_sign_id += 1
+    return new_signs, obsolete_signs
 
-    for sign in signs_to_unplace:
-      vimsupport.UnplaceSign( sign )
+
+  def _PlaceNewSigns( self, new_signs ):
+    for sign in new_signs:
+      vimsupport.PlaceSign( sign.id, sign.line, self._bufnr, sign.is_error )
+      self._placed_signs.append( sign )
+
+
+  def _UnplaceObsoleteSigns( self, obsolete_signs ):
+    for sign in obsolete_signs:
+      self._placed_signs.remove( sign )
+      vimsupport.UnplaceSignInBuffer( self._bufnr, sign.id )
 
 
   def _ConvertDiagListToDict( self ):
@@ -206,27 +230,10 @@ def _NormalizeDiagnostic( diag ):
   return diag
 
 
-def _ConvertDiagnosticToMatchPatterns( diagnostic ):
-  patterns = []
-
-  location_extent = diagnostic[ 'location_extent' ]
-  if location_extent[ 'start' ][ 'line_num' ] <= 0:
-    location = diagnostic[ 'location' ]
-    patterns.append( vimsupport.GetDiagnosticMatchPattern(
-      location[ 'line_num' ],
-      location[ 'column_num' ] ) )
-  else:
-    patterns.append( vimsupport.GetDiagnosticMatchPattern(
-      location_extent[ 'start' ][ 'line_num' ],
-      location_extent[ 'start' ][ 'column_num' ],
-      location_extent[ 'end' ][ 'line_num' ],
-      location_extent[ 'end' ][ 'column_num' ] ) )
-
-  for diagnostic_range in diagnostic[ 'ranges' ]:
-    patterns.append( vimsupport.GetDiagnosticMatchPattern(
-      diagnostic_range[ 'start' ][ 'line_num' ],
-      diagnostic_range[ 'start' ][ 'column_num' ],
-      diagnostic_range[ 'end' ][ 'line_num' ],
-      diagnostic_range[ 'end' ][ 'column_num' ] ) )
-
-  return patterns
+class _DiagSignPlacement( namedtuple( "_DiagSignPlacement",
+                                      [ 'id', 'line', 'is_error' ] ) ):
+  # We want two signs that have different ids but the same location to compare
+  # equal. ID doesn't matter.
+  def __eq__( self, other ):
+    return ( self.line == other.line and
+             self.is_error == other.is_error )

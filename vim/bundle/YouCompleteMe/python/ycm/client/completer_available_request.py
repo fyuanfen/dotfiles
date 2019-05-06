@@ -22,7 +22,8 @@ from __future__ import absolute_import
 # Not installing aliases from python-future; it's unreliable and slow.
 from builtins import *  # noqa
 
-from ycm.client.base_request import BaseRequest, BuildRequestData
+from ycm.client.base_request import ( BaseRequest, BuildRequestData,
+                                      HandleServerException )
 
 
 class CompleterAvailableRequest( BaseRequest ):
@@ -35,8 +36,9 @@ class CompleterAvailableRequest( BaseRequest ):
   def Start( self ):
     request_data = BuildRequestData()
     request_data.update( { 'filetypes': self.filetypes } )
-    self._response = self.PostDataToHandler( request_data,
-                                             'semantic_completion_available' )
+    with HandleServerException():
+      self._response = self.PostDataToHandler( request_data,
+                                               'semantic_completion_available' )
 
 
   def Response( self ):

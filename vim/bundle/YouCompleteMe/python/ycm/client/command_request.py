@@ -22,7 +22,8 @@ from __future__ import absolute_import
 # Not installing aliases from python-future; it's unreliable and slow.
 from builtins import *  # noqa
 
-from ycm.client.base_request import BaseRequest, BuildRequestData
+from ycm.client.base_request import ( BaseRequest, BuildRequestData,
+                                      HandleServerException )
 from ycm import vimsupport
 from ycmd.utils import ToUnicode
 
@@ -34,14 +35,11 @@ def _EnsureBackwardsCompatibility( arguments ):
 
 
 class CommandRequest( BaseRequest ):
-  def __init__( self,
-                arguments,
-                buffer_command = 'same-buffer',
-                extra_data = None ):
+  def __init__( self, arguments, completer_target = None, extra_data = None ):
     super( CommandRequest, self ).__init__()
     self._arguments = _EnsureBackwardsCompatibility( arguments )
-    self._command = arguments and arguments[ 0 ]
-    self._buffer_command = buffer_command
+    self._completer_target = ( completer_target if completer_target
+                               else 'filetype_default' )
     self._extra_data = extra_data
     self._response = None
 
@@ -51,17 +49,19 @@ class CommandRequest( BaseRequest ):
     if self._extra_data:
       request_data.update( self._extra_data )
     request_data.update( {
+      'completer_target': self._completer_target,
       'command_arguments': self._arguments
     } )
-    self._response = self.PostDataToHandler( request_data,
-                                             'run_completer_command' )
+    with HandleServerException():
+      self._response = self.PostDataToHandler( request_data,
+                                               'run_completer_command' )
 
 
   def Response( self ):
     return self._response
 
 
-  def RunPostCommandActionsIfNeeded( self, modifiers ):
+  def RunPostCommandActionsIfNeeded( self ):
     if not self.Done() or self._response is None:
       return
 
@@ -83,10 +83,10 @@ class CommandRequest( BaseRequest ):
     # The only other type of response we understand is GoTo, and that is the
     # only one that we can't detect just by inspecting the response (it should
     # either be a single location or a list)
-    return self._HandleGotoResponse( modifiers )
+    return self._HandleGotoResponse()
 
 
-  def _HandleGotoResponse( self, modifiers ):
+  def _HandleGotoResponse( self ):
     if isinstance( self._response, list ):
       vimsupport.SetQuickFixList(
         [ _BuildQfListItem( x ) for x in self._response ] )
@@ -94,9 +94,7 @@ class CommandRequest( BaseRequest ):
     else:
       vimsupport.JumpToLocation( self._response[ 'filepath' ],
                                  self._response[ 'line_num' ],
-                                 self._response[ 'column_num' ],
-                                 modifiers,
-                                 self._buffer_command )
+                                 self._response[ 'column_num' ] )
 
 
   def _HandleFixitResponse( self ):
@@ -116,8 +114,7 @@ class CommandRequest( BaseRequest ):
             [ fixit[ 'text' ] for fixit in self._response[ 'fixits' ] ] )
 
         vimsupport.ReplaceChunks(
-          self._response[ 'fixits' ][ fixit_index ][ 'chunks' ],
-          silent = self._command == 'Format' )
+          self._response[ 'fixits' ][ fixit_index ][ 'chunks' ] )
       except RuntimeError as e:
         vimsupport.PostVimMessage( str( e ) )
 
@@ -134,14 +131,11 @@ class CommandRequest( BaseRequest ):
     vimsupport.WriteToPreviewWindow( self._response[ 'detailed_info' ] )
 
 
-def SendCommandRequest( arguments,
-                        modifiers,
-                        buffer_command,
-                        extra_data = None ):
-  request = CommandRequest( arguments, buffer_command, extra_data )
+def SendCommandRequest( arguments, completer, extra_data = None ):
+  request = CommandRequest( arguments, completer, extra_data )
   # This is a blocking call.
   request.Start()
-  request.RunPostCommandActionsIfNeeded( modifiers )
+  request.RunPostCommandActionsIfNeeded()
   return request.Response()
 
 
