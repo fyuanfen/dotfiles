@@ -11,7 +11,7 @@ Before:
   runtime autoload/ale/lsp.vim
   runtime autoload/ale/util.vim
 
-  function! ale#linter#StartLSP(buffer, linter, callback) abort
+  function! ale#lsp_linter#StartLSP(buffer, linter, callback) abort
     let g:Callback = a:callback
 
     return {
@@ -61,7 +61,7 @@ After:
 
   delfunction HandleValidLSPResult
 
-  runtime autoload/ale/linter.vim
+  runtime autoload/ale/lsp_linter.vim
   runtime autoload/ale/lsp.vim
   runtime autoload/ale/util.vim
 
@@ -149,3 +149,23 @@ Execute(LSP hover response with lists of strings and marked strings should be ha
 
   AssertEqual ["foo\nbar\n"], g:echo_list
   AssertEqual {}, ale#hover#GetMap()
+
+Execute(tsserver responses for documentation requests should be handled):
+  call ale#hover#SetMap({3: {'show_documentation': 1}})
+
+  call ale#hover#HandleTSServerResponse(
+  \ 1,
+  \ {
+  \   'command': 'quickinfo',
+  \   'request_seq': 3,
+  \   'success': v:true,
+  \   'body': {
+  \     'documentation': 'foo is a very good method',
+  \     'displayString': 'foo bar',
+  \   },
+  \ }
+  \)
+
+  " The preview window should show the text.
+  AssertEqual ['foo is a very good method'], ale#test#GetPreviewWindowText()
+  silent! pclose

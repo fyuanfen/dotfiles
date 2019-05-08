@@ -11,3 +11,15 @@ snippet le "logError" b
 log.Errorf($0)
 endsnippet
 
+snippet ifee "if err log it" b
+if err != nil {
+   fmt.Println("error:", err)
+}
+endsnippet
+
+snippet fun "Function" b
+//$1 xxx...
+func ${1:Name}(${2:params} ${3:string}) ${4:} {
+	${0:${VISUAL}}
+}
+endsnippet

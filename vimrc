@@ -3,8 +3,6 @@ set laststatus=2     "Always show the statusline
 set encoding=utf-8   "Necessary to show unicode glyphs
 set hlsearch 
 set number
-"set nonu
-"set relativenumber  " 相对行号"
 set cursorline " 突出显示当前行:
 set tabstop=4 " Tab键的宽度
 set expandtab
@@ -27,6 +25,9 @@ set smartindent
 set ignorecase smartcase
 set showcmd         " 输入的命令显示出来 
 
+"buff hidden when 
+"set bufhidden=delete
+
 set fileencodings=utf-bom,utf-8,cp936,gb18030,latin1
 "language message zh_CN.utf-8
 set guifont=Consolas:h12:cANSI
@@ -37,13 +38,11 @@ syntax enable
 "配色方案
 set t_Co=256
 set background=dark
-"color molokai
-"color lucius
+color lucius
 
 "自定义快捷键
 nmap <c-s> :w<CR>
 imap <c-s> <Esc>:w<CR>
-map <C-q> :call UpdateModified()<cr>
 nnoremap <C-e> :lnext<CR>
 nnoremap <S-e> :lprevious<CR>
 imap <C-q> <ESC>:q<cr>
@@ -89,7 +88,7 @@ func! CompileRunGcc()
     elseif &filetype == 'javascript'
         exec "!node %"
     elseif &filetype == 'go'
-        exec ":GoBuild"
+        exec ":GoRun"
     elseif &filetype == 'python' 
         exec "!python %"
     elseif &filetype == 'lua' 
@@ -116,8 +115,6 @@ map <C-n> :NERDTreeToggle<CR>
 let g:NERDTreeMapOpenVSplit="v"
 let g:NERDTreeMapOpenSplit="s"
 let NERDTreeShowBookmarks=1
-" 自动启动nertTree
-"autocmd vimenter * NERDTree
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTreeType") && b:NERDTreeType == "primary") | q | endif
 
 "Ack
@@ -130,22 +127,17 @@ command! Q q
 command! Wqa wqa
 command! HT set filetype=html
 
-"command REM %s/\(\d\+\)px/rem(\1)/g
 command! JSON %!python -m json.tool  
 
 " 自动完成
 set complete-=k complete+=k
 " 设置字典补全文件
 au FileType javascript set dictionary+=$HOME/.vim/dict/node.dict
-au FileType PHP set dictionary+=$HOME/.vim/dict/PHP.dict
 
 "插入编辑模式
 set pastetoggle=<F9>
 
 "ultisnips
-"let g:UltiSnipsExpandTrigger="<tab>"
-"let g:UltiSnipsJumpForwardTrigger="<tab>"
-"let g:UltiSnipsJumpBackwardTrigger="<c-k>"
 let g:UltiSnipsEditSplit="vertical"
 command! Uedit UltiSnipsEdit
 
@@ -154,35 +146,35 @@ autocmd BufNewFile *.php 0r ~/.vim/template/simple.php
 autocmd BufNewFile *.html 0r ~/.vim/template/simple.html
 autocmd BufNewFile *.htm 0r ~/.vim/template/simple.html
 
-"map <F3> :call UpdateModified()<CR>
-"command Wq :call UpdateModified()<CR>
-"func! UpdateModified()
-    "exec "1," . 9 . "g/Last Modified :.*/s/Last Modified :.*/Last Modified : " .strftime("%Y-%m-%d %T")
-    "exec "wq" 
-"endfunc
-
 autocmd BufNewFile *.sh 0r ~/.vim/template/simple.sh
 autocmd BufNewFile *.py 0r ~/.vim/template/simple.py
 
 "配置文件类型
 autocmd BufRead *.conf setfiletype config 
 
-"execute pathogen#infect()
+execute pathogen#infect()
 
-"新一代错误检查工具ele
+"新一代错误检查工具ale
 nmap <silent> <C-k> <Plug>(ale_previous_wrap)
 nmap <silent> <C-j> <Plug>(ale_next_wrap)
 
-let g:ale_fix_on_save = 1
-let g:ale_open_list = 1
-let g:ale_set_quickfix = 1
-"let g:ale_sign_column_always = 1
-let g:ale_set_highlights = 0
+let g:ale_fixers = {
+\   'javascript': ['eslint'],
+\   'go': ['govet'],
+\}
+
+map <leader>at :ALEToggle<CR>
+
 let g:ale_lint_on_text_changed = 'never'
-let g:ale_lint_on_enter = 0
-let g:ale_lint_on_save = 1
+"let g:ale_fix_on_save = 1
+let g:ale_open_list = 1
+let g:ale_set_loclist = 0
+let g:ale_set_quickfix = 1
 
-
+let g:ale_keep_list_window_open = 0
+let g:ale_pattern_options = {
+    \ 'github.com.*$': {'ale_linters': [], 'ale_fixers': []},
+\}
 
 "ctrlP
 let g:ctrlp_use_caching = 10 
@@ -203,34 +195,12 @@ let g:multi_cursor_prev_key='<C-p>'
 let g:multi_cursor_skip_key='<C-x>'
 let g:multi_cursor_quit_key='<Esc>'
 
-" vue-vim
-autocmd FileType vue syntax sync fromstart
-let g:ft = ''
-function! NERDCommenter_before()
-  if &ft == 'vue'
-    let g:ft = 'vue'
-    let stack = synstack(line('.'), col('.'))
-    if len(stack) > 0
-      let syn = synIDattr((stack)[0], 'name')
-      if len(syn) > 0
-        exe 'setf ' . substitute(tolower(syn), '^vue_', '', '')
-      endif
-    endif
-  endif
-endfunction
-function! NERDCommenter_after()
-  if g:ft == 'vue'
-    setf vue
-    let g:ft = ''
-  endif
-endfunction
-
 "YCM
 "let g:ycm_filetype_whitelist = { 'javascript' : 1, 'cpp' : 1,'sql':1 ,'go' : 1 }
 let g:ycm_key_list_select_completion = ['<C-n>', '<Down>']
 let g:ycm_key_list_previous_completion = ['<C-p>', '<Up>']
 let g:ycm_min_num_of_chars_for_completion=2
-let g:ycm_server_python_interpreter = "/usr/local/bin/python3"
+let g:ycm_server_python_interpreter = "/usr/local/bin/python"
 let g:ycm_add_preview_to_completeopt = 0
 "let g:ycm_confirm_extra_conf ="~/.ycm_extra_conf.py" 
 nnoremap <leader>jc :YcmCompleter GoToDeclaration<CR>
@@ -270,17 +240,8 @@ set tags+=./../tags,./../../tags,./../../../tags
 "根据文件后缀 自动高料
 au BufNewFile,BufRead *.jshintrc set filetype=rc
 
-"Tern
-"跳转到定义
-nmap gd :TernDef<CR>   
-"列出引用的地方
-nmap gl :TernRefs<CR>
-
 "Easy Motion
 " <Leader>f{char} to move to {char}
-"map  <Leader>f <Plug>(easymotion-bd-f)
-"nmap <Leader>f <Plug>(easymotion-overwin-f)
-
 map  <Leader>j <Plug>(easymotion-j)
 nmap <Leader>j <Plug>(easymotion-j)
 map  <Leader>k <Plug>(easymotion-k)
@@ -297,11 +258,12 @@ nmap <Leader>L <Plug>(easymotion-overwin-line)
 map  <Leader>w <Plug>(easymotion-bd-w)
 nmap <Leader>w <Plug>(easymotion-overwin-w)
 
-" vim-vue
-let g:vue_disable_pre_processors=1
+" vim-go
+let g:go_fmt_command = "goimports"
+nmap <Leader>fs :GoFillStruct<CR>
 
+set rtp+=/usr/local/opt/fzf
 
 "自动载入配置文件
 autocmd! bufwritepost _vimrc source %
-
 
