@@ -1,53 +1,30 @@
 # Dot Files
 
-
 I am running on Mac OS X, but it will likely work on Linux as well.
 
-
 ## Installation
+
 ### offline installation
 
-if you install it offline，run the following steps
-dotfile离线安装
+## 安装
 
-1. Before start, install git and zsh
-```
-sudo apt-get install git-core zsh
-```
-2. Go to the repository and download the zip file
+### 离线安装
 
- https://github.com/robbyrussell/oh-my-zsh
+离线安装请使用 build 分支
 
-Open the zip file and extract to your home folder, and rename to .oh-my-zsh
-```
-oh-my-zsh-master -> ~/.oh-my-zsh
-```
+裸机安装步骤
 
-
-3. Set default sh
-```
-chsh -s `which zsh`
-```
-4. Restart!
-
-
-
-### configure steps
-
-Run the following commands in your terminal. It will prompt you before it does anything destructive. Check out the [Rakefile](https://github.com/fyuanfen/dotfiles/blob/master/Rakefile) to see exactly what it does.
+1. [安装 git](./doc/git-install.md)
+2. [安装 vim7.4 以上的版本](./doc/vim-install.md)
+3. 配置步骤
 
 ```terminal
-git clone git@github.com:fyuanfen/dotfiles.git ~/.dotfiles
+git clone git@git.code.oa.com:yurielzhang/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
-rake install
+./build-install.sh
 ```
 
-After installing, open a new terminal window to see the effects.
-
-Feel free to customize the .zshrc file to match your preference.
-
-
-## Uninstall
+## 卸载步骤
 
 To remove the dotfile configs, run the following commands. Be certain to double check the contents of the files before removing so you don't lose custom settings.
 
