@@ -28,4 +28,4 @@ for file in ~/.{path,bash_prompt,aliases,functions,extra,exports}; do
 #
  # for Homebrew installed rbenv
  # if which rbenv > /dev/null; then eval "$(rbenv init -)"; fi
-  
+

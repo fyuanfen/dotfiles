@@ -1,7 +1,7 @@
 set nocompatible     "Disable vi-compatibility
 set laststatus=2     "Always show the statusline
 set encoding=utf-8   "Necessary to show unicode glyphs
-set hlsearch 
+set hlsearch
 set number
 set cursorline " 突出显示当前行:
 set tabstop=4 " Tab键的宽度
@@ -21,11 +21,11 @@ set smarttab
 set hlsearch
 set modeline   " 在文件头上加入一行注释让VIM读取设置
 set fileencodings=utf-bom,utf-8,cp936,gb18030,latin1
-set smartindent   
+set smartindent
 set ignorecase smartcase
-set showcmd         " 输入的命令显示出来 
+set showcmd         " 输入的命令显示出来
 
-"buff hidden when 
+"buff hidden when
 "set bufhidden=delete
 
 set fileencodings=utf-bom,utf-8,cp936,gb18030,latin1
@@ -72,26 +72,26 @@ endfunction
 vnoremap <leader>s :call VisualSelection('ag', '')<CR>
 
 
-"自动运行 
+"自动运行
 map <F5> :call CompileRunGcc()<CR>
 func! CompileRunGcc()
-    exec "w" 
-    if &filetype == 'c' 
+    exec "w"
+    if &filetype == 'c'
         exec "!make"
         exec "! ./%<"
-    elseif &filetype == 'cpp' 
+    elseif &filetype == 'cpp'
         exec "!rm ./%< & make & ./%<"
-    elseif &filetype == 'php' 
+    elseif &filetype == 'php'
         exec "!php %"
-    elseif &filetype == 'sh' 
+    elseif &filetype == 'sh'
         exec "!bash %"
     elseif &filetype == 'javascript'
         exec "!node %"
     elseif &filetype == 'go'
         exec ":GoRun"
-    elseif &filetype == 'python' 
+    elseif &filetype == 'python'
         exec "!python %"
-    elseif &filetype == 'lua' 
+    elseif &filetype == 'lua'
         exec "!lua %"
     endif
 endfunc
@@ -99,14 +99,14 @@ endfunc
 "编译c代码
 "map <F7> :call Compile()<CR>
 "func! Compile()
-    "exec "w" 
-    "if &filetype == 'c' 
+    "exec "w"
+    "if &filetype == 'c'
         "exec "!make"
     "endif
 "endfunc
 
 "Tagbar
-nmap <F8> :TagbarToggle<CR> 
+nmap <F8> :TagbarToggle<CR>
 let g:tagbar_ctags_bin = 'ctags'
 let g:tagbar_width = 30
 
@@ -127,7 +127,7 @@ command! Q q
 command! Wqa wqa
 command! HT set filetype=html
 
-command! JSON %!python -m json.tool  
+command! JSON %!python -m json.tool
 
 " 自动完成
 set complete-=k complete+=k
@@ -150,7 +150,7 @@ autocmd BufNewFile *.sh 0r ~/.vim/template/simple.sh
 autocmd BufNewFile *.py 0r ~/.vim/template/simple.py
 
 "配置文件类型
-autocmd BufRead *.conf setfiletype config 
+autocmd BufRead *.conf setfiletype config
 
 execute pathogen#infect()
 
@@ -177,7 +177,7 @@ let g:ale_pattern_options = {
 \}
 
 "ctrlP
-let g:ctrlp_use_caching = 10 
+let g:ctrlp_use_caching = 10
 let g:ctrlp_clear_cache_on_exit = 0
 let g:ctrlp_follow_symlinks = 1
 let g:ctrlp_custom_ignore = 'node_modules\|DS_Store\|git\|obj'
@@ -202,7 +202,7 @@ let g:ycm_key_list_previous_completion = ['<C-p>', '<Up>']
 let g:ycm_min_num_of_chars_for_completion=2
 let g:ycm_server_python_interpreter = "/usr/local/bin/python"
 let g:ycm_add_preview_to_completeopt = 0
-"let g:ycm_confirm_extra_conf ="~/.ycm_extra_conf.py" 
+"let g:ycm_confirm_extra_conf ="~/.ycm_extra_conf.py"
 nnoremap <leader>jc :YcmCompleter GoToDeclaration<CR>
 " 只能是 #include 或已打开的文件
 nnoremap <leader>jd :YcmCompleter GoToDefinition<CR>
@@ -215,7 +215,7 @@ let g:tern_map_keys=1
 let g:tern_show_argument_hints='on_hold'
 
 "不显示自动补全preview窗口
-"set completeopt-=preview 
+"set completeopt-=preview
 
 "SuperTab
 let g:SuperTabDefaultCompletionType = '<C-n>'
