@@ -80,6 +80,8 @@ def install_oh_my_zsh
     when 'y'
       puts "installing oh-my-zsh"
       system %Q{git clone https://github.com/robbyrussell/oh-my-zsh.git "$HOME/.oh-my-zsh"}
+      system %Q{git clone git://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugins/zsh-autosuggestions}
+      system %Q{git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $ZSH_CUSTOM/plugins/zsh-autosuggestion}
     when 'q'
       exit
     else
